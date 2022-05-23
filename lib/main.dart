@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -94,14 +95,35 @@ class _MyHomePageState extends State<MyHomePage> {
       loading = true;
     });
 
-    final url = Uri.parse(
-        'https://us-central1-reservation-1137b.cloudfunctions.net/api/');
-    final response = await http.get(url);
+    final image = this.image;
 
-    setState(() {
-      result = response.body;
-      loading = false;
-    });
+    if (image != null) {
+      final url = Uri.parse(
+          'http://localhost:5000/scan');
+
+      final request = http.MultipartRequest('POST', url);
+
+      request.files.add(
+          await http.MultipartFile.fromPath(
+              'image',
+              image.path
+          )
+      );
+
+      final response = await request.send();
+      final respStr = await response.stream.bytesToString();
+      final resultStr = json.decode(respStr)['result'].join();
+
+      setState(() {
+        result = resultStr;
+        loading = false;
+      });
+
+    } else {
+      setState(() {
+        loading = false;
+      });
+    }
   }
 
   @override
